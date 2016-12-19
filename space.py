@@ -1,7 +1,7 @@
 import arcade
 from models import World, Ship
 SCREEN_WIDTH = 600
-SCREEN_HEIGHT = 600
+SCREEN_HEIGHT = 800
 
 
 class ModelSprite(arcade.Sprite):
@@ -30,9 +30,27 @@ class SpaceGameWindow(arcade.Window):
 
         self.ship_sprite = ModelSprite('images/ship.png',model=self.world.ship)
 
+        # self.wall_sprite = ModelSprite('images/wall.png',model=self.world.wall)
+        #
+        # self.coin_sprite = ModelSprite('images/dot.png',model=self.world.coin)
+
+        self.wall_sprites = []
+        for wall in self.world.wall:
+            self.wall_sprites.append(ModelSprite('images/wall.png',model=wall))
+
+        self.coin_sprites = []
+        for coin in self.world.coin:
+            self.wall_sprites.append(ModelSprite('images/dot.png',model=coin))
+
     def on_draw(self):
         arcade.start_render()
         self.ship_sprite.draw()
+
+        for sprite in self.wall_sprites:
+            sprite.draw()
+
+        for sprite in self.coin_sprites:
+            sprite.draw()
 
     def animate(self, delta):
         self.world.animate(delta)
