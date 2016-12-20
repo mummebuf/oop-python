@@ -1,5 +1,5 @@
 import arcade
-from models import World, Ship
+from models import World, Player
 SCREEN_WIDTH = 840
 SCREEN_HEIGHT = 600
 
@@ -28,7 +28,7 @@ class SpaceGameWindow(arcade.Window):
 
         self.world = World(width, height)
 
-        self.ship_sprite = ModelSprite('images/ship.png',model=self.world.ship)
+        self.player_sprite = ModelSprite('images/pacman.png',model=self.world.player)
 
         # self.wall_sprite = ModelSprite('images/wall.png',model=self.world.wall)
         #
@@ -44,7 +44,7 @@ class SpaceGameWindow(arcade.Window):
 
     def on_draw(self):
         arcade.start_render()
-        self.ship_sprite.draw()
+        self.player_sprite.draw()
 
         for sprite in self.wall_sprites:
             sprite.draw()
@@ -54,13 +54,13 @@ class SpaceGameWindow(arcade.Window):
 
     def animate(self, delta):
         self.world.animate(delta)
-# self.ship_sprite.set_position(self.world.ship.x, self.world.ship.y)
+# self.player_sprite.set_position(self.world.player.x, self.world.player.y)
 
     def on_key_press(self, key, key_modifiers):
         self.world.on_key_press(key, key_modifiers)
 
-    def on_key_release(self, key, key_modifiers):
-        self.world.on_key_release(key, key_modifiers)
+    # def on_key_release(self, key, key_modifiers):
+    #     self.world.on_key_release(key, key_modifiers)
 
 if __name__ == '__main__':
     window = SpaceGameWindow(SCREEN_WIDTH, SCREEN_HEIGHT)
