@@ -11,18 +11,18 @@ class Ship():
 
     def direction_left(self):
         Ship.DELTA_X = -1
-        # Ship.DELTA_Y = 0
+        Ship.DELTA_Y = 0
 
     def direction_right(self):
         Ship.DELTA_X = 1
-        # Ship.DELTA_Y = 0
+        Ship.DELTA_Y = 0
 
     def direction_down(self):
-        # Ship.DELTA_X = 0
+        Ship.DELTA_X = 0
         Ship.DELTA_Y = -1
 
     def direction_up(self):
-        # Ship.DELTA_X = 0
+        Ship.DELTA_X = 0
         Ship.DELTA_Y = 1
 
     def done(self):
@@ -42,8 +42,8 @@ class Ship():
         if self.y <= self.world.height and self.y >=0:
             self.y += Ship.DELTA_Y * self.world.speed
 
-        if self.y > self.world.width:
-            self.y = self.world.width
+        if self.y > self.world.height:
+            self.y = self.world.height
 
         if self.y < 0:
             self.y = 0
@@ -93,8 +93,8 @@ class World:
         for r in range(self.maze.height):
             c = 0
             for letter in self.maze.MAP[r]:
-                    x = c * 40
-                    y = self.height - (r * 40) - 40
+                    x = (c+1) * 40
+                    y = self.height - (r * 40) - 80
                     if letter == "x":
                         wall = Wall(self,x,y)
                         self.wall.append(wall)
