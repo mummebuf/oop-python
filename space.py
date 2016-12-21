@@ -30,37 +30,39 @@ class SpaceGameWindow(arcade.Window):
 
         self.player_sprite = ModelSprite('images/pacman.png',model=self.world.player)
 
-        # self.wall_sprite = ModelSprite('images/wall.png',model=self.world.wall)
-        #
-        # self.coin_sprite = ModelSprite('images/dot.png',model=self.world.coin)
 
         self.wall_sprites = []
         for wall in self.world.wall:
             self.wall_sprites.append(ModelSprite('images/wall.png',model=wall))
 
-        self.coin_sprites = []
-        for coin in self.world.coin:
-            self.wall_sprites.append(ModelSprite('images/dot.png',model=coin))
+        self.coin_texture = arcade.load_texture('images/dot.png')
+
+
+    def draw_coins(self, coins,player):
+            for c in coins:
+                if not c.is_collected:
+                    arcade.draw_texture_rectangle(c.x, c.y, 40, 40,self.coin_texture)
 
     def on_draw(self):
         arcade.start_render()
         self.player_sprite.draw()
 
+
         for sprite in self.wall_sprites:
             sprite.draw()
 
-        for sprite in self.coin_sprites:
-            sprite.draw()
+        self.draw_coins(self.world.coins,self.world.player)
+
+
+
 
     def animate(self, delta):
         self.world.animate(delta)
-# self.player_sprite.set_position(self.world.player.x, self.world.player.y)
+
 
     def on_key_press(self, key, key_modifiers):
         self.world.on_key_press(key, key_modifiers)
 
-    # def on_key_release(self, key, key_modifiers):
-    #     self.world.on_key_release(key, key_modifiers)
 
 if __name__ == '__main__':
     window = SpaceGameWindow(SCREEN_WIDTH, SCREEN_HEIGHT)
