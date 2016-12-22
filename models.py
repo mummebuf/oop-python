@@ -1,6 +1,9 @@
 import arcade.key
+import random
 COIN_MARGIN = 5
 COIN_HIT_MARGIN = 5
+ENEMYSPEED = 4
+
 class Player():
     DELTA_X = 0
     DELTA_Y = 0
@@ -39,9 +42,6 @@ class Player():
 
     def animate(self, delta):
         if self.isAtCenter():
-            # r = self.r
-            # c = self.c
-            # if self.hasCoinAt(r,c)
             x = self.x
             y = self.y
             if self.maze.canMoveInDirection(x,y,Player.NEXT_DELTA_X,Player.NEXT_DELTA_Y):
@@ -50,6 +50,7 @@ class Player():
             else:
                 Player.DELTA_X = 0
                 Player.DELTA_Y = 0
+
         if self.x <= self.world.width and self.x >= 0:
             self.x += Player.DELTA_X * self.world.speed
 
@@ -68,6 +69,96 @@ class Player():
         if self.y < 0:
             self.y = 0
 
+
+class Enemy():
+
+    def __init__(self, world, x, y):
+        self.world = world
+        self.x = x
+        self.y = y
+        self.maze = Maze(self)
+        self.random = 1
+        self.next_delta_x = 0
+        self.next_delta_y = 1
+        self.delta_x = 1
+        self.delta_y = 0
+    def isAtCenter(self):
+        return (self.x % 40) == 0 and (self.y % 40) == 0
+
+
+    def setNextDirectionUp(self):
+        self.next_delta_x = 0
+        self.next_delta_y = 1
+
+    def setNextDirectionDown(self):
+        self.next_delta_x = 0
+        self.next_delta_y = -1
+
+    def setNextDirectionRight(self):
+        self.next_delta_x = 1
+        self.next_delta_y = 0
+
+    def setNextDirectionLeft(self):
+        self.next_delta_x = -1
+        self.next_delta_y = 0
+
+    def setNextDirectionDone(self):
+        self.next_delta_x = 0
+        self.next_delta_y = 0
+
+    def animate(self, delta):
+        self.x += self.delta_x * ENEMYSPEED
+        self.y += self.delta_y * ENEMYSPEED
+        if self.isAtCenter():
+            x = self.x
+            y = self.y
+            print(self.random)
+
+            print(self.maze.canMoveInDirection(x,y,self.next_delta_x,self.next_delta_y))
+            if self.maze.canMoveInDirection(x,y,self.next_delta_x,self.next_delta_y):
+                self.delta_x = self.next_delta_x
+                self.delta_y = self.next_delta_y
+
+                if self.random == 1 or self.random == 2:
+                    self.random = random.randrange(3,5)
+
+                    if self.random == 3:
+                        self.setNextDirectionLeft()
+
+                    if self.random == 4:
+                        self.setNextDirectionRight()
+
+                elif self.random == 3 or self.random == 4:
+                    self.random = random.randrange(1,3)
+                    if self.random == 1:
+                        self.setNextDirectionUp()
+
+                    if self.random == 2:
+                        self.setNextDirectionDown()
+
+
+            if not self.maze.canMoveInDirection(x,y,self.delta_x,self.delta_y):
+                self.delta_x = 0
+                self.delta_y = 0
+                print('cant move')
+                while not (self.maze.canMoveInDirection(x,y,self.next_delta_x,self.next_delta_y)):
+
+                    if self.random == 1 or self.random ==2:
+                        self.random = random.randrange(3,5)
+
+                        if self.random == 3:
+                            self.setNextDirectionLeft()
+                        if self.random == 4:
+                            self.setNextDirectionRight()
+
+
+                    elif self.random == 3 or self.random ==4:
+                        self.random = random.randrange(1,3)
+
+                        if self.random == 1:
+                            self.setNextDirectionUp()
+                        if self.random == 2:
+                            self.setNextDirectionDown()
 
 class Maze():
     MAP = [ "xxxxxxxxxxxxxxxxxxxx",
@@ -121,12 +212,19 @@ class Coin:
         return (self.x == player.x) and (self.y == player.y)
 
 class World:
+    NUM_ENEMY = 7
     def __init__(self, width, height):
         self.width = width
         self.height = height
         self.maze = Maze(self)
-        self.speed = 5
+        self.speed = 8
         self.player = Player(self,80, 80)
+
+        self.enemies = []
+        for i in range(World.NUM_ENEMY):
+            enemy = Enemy(self, 120, 80)
+            self.enemies.append(enemy)
+
         self.wall = []
         self.coins = []
         self.score = 0
@@ -146,16 +244,46 @@ class World:
 
     def animate(self, delta):
         self.player.animate(delta)
+
+        for enemy in self.enemies:
+            enemy.animate(delta)
+
         self.collect_coins()
+        self.updatespeed()
+        # self.add_enemy()
+
     def collect_coins(self):
         for c in self.coins:
             if (not c.is_collected) and (c.hit(self.player)):
                 c.is_collected = True
-                self.score += 1
+                self.score += 10
+
+    # def add_enemy(self):
+    #     if(self.score % 100 ==0):
+    #         World.NUM_NEWENEMY = 2 + self.score//100
+    #     if(World.NUM_NEWENEMY > World.NUM_ENEMY):
+    #         for i in range(World.NUM_ENEMY - World.NUM_ENEMY):
+    #             enemy = Enemy(self, 120, 80)
+    #             self.enemies.append(enemy)
+
+    def updatespeed(self):
+
+        if self.score == 100:
+            self.speed = 8
+
+        if self.score == 300:
+            self.speed = 4
+
+        if self.score == 600:
+            self.speed = 2
+
+        if self.score == 1000:
+            self.speed = 1
 
     def on_key_press(self, key, key_modifiers):
         if key == arcade.key.A:
             self.player.setNextDirectionLeft()
+            print(self.enemies)
         if key == arcade.key.W:
             self.player.setNextDirectionUp()
         if key == arcade.key.D:

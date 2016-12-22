@@ -28,8 +28,13 @@ class SpaceGameWindow(arcade.Window):
 
         self.world = World(width, height)
 
-        self.player_sprite = ModelSprite('images/pacman.png',model=self.world.player)
+        self.player_sprite = ModelSprite('images/wolf.png',model=self.world.player)
 
+        # self.enemy_sprite = ModelSprite('images/pacman.png',model=self.world.enemy)
+
+        self.enemy_sprites =[]
+        for enemy in self.world.enemies:
+            self.enemy_sprites.append(ModelSprite('images/pig.png',model=enemy))
 
         self.wall_sprites = []
         for wall in self.world.wall:
@@ -47,13 +52,16 @@ class SpaceGameWindow(arcade.Window):
         arcade.start_render()
         self.player_sprite.draw()
 
+        # self.enemy_sprite.draw()
+        for sprite in self.enemy_sprites:
+            sprite.draw()
 
         for sprite in self.wall_sprites:
             sprite.draw()
 
         self.draw_coins(self.world.coins,self.world.player)
 
-
+        arcade.draw_text(str(self.world.score),750,550,arcade.color.WHITE, 20)
 
 
     def animate(self, delta):
