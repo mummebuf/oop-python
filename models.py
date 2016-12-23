@@ -1,7 +1,5 @@
 import arcade.key
 import random
-COIN_MARGIN = 5
-COIN_HIT_MARGIN = 5
 ENEMYSPEED = 4
 
 class Player():
@@ -18,7 +16,6 @@ class Player():
         self.maze = Maze(self)
     def isAtCenter(self):
         return (self.x % 40) == 0 and (self.y % 40) == 0
-
 
     def setNextDirectionUp(self):
         Player.NEXT_DELTA_X = 0
@@ -85,6 +82,9 @@ class Enemy():
     def isAtCenter(self):
         return (self.x % 40) == 0 and (self.y % 40) == 0
 
+    def gameOver(self, player):
+        return ((abs(self.x - player.x) < 12) and
+                        (abs(self.y - player.y) < 12))
 
     def setNextDirectionUp(self):
         self.next_delta_x = 0
@@ -112,9 +112,6 @@ class Enemy():
         if self.isAtCenter():
             x = self.x
             y = self.y
-            print(self.random)
-
-            print(self.maze.canMoveInDirection(x,y,self.next_delta_x,self.next_delta_y))
             if self.maze.canMoveInDirection(x,y,self.next_delta_x,self.next_delta_y):
                 self.delta_x = self.next_delta_x
                 self.delta_y = self.next_delta_y
@@ -140,7 +137,6 @@ class Enemy():
             if not self.maze.canMoveInDirection(x,y,self.delta_x,self.delta_y):
                 self.delta_x = 0
                 self.delta_y = 0
-                print('cant move')
                 while not (self.maze.canMoveInDirection(x,y,self.next_delta_x,self.next_delta_y)):
 
                     if self.random == 1 or self.random ==2:
@@ -163,14 +159,14 @@ class Enemy():
 class Maze():
     MAP = [ "xxxxxxxxxxxxxxxxxxxx",
             "x..................x",
-            "x.xxx.xxx..xxx.xxx.x",
-            "x.x...x......x...x.x",
-            "x.x.xxx.xxxx.xxx.x.x",
+            "x.xxx.x.x..x.x.xxx.x",
+            "x.x.....x....x.....x",
+            "x...x.x.x.xx.x.x.x.x",
             "x.x.x..........x.x.x",
-            "x.....xxx..xxx.....x",
+            "x.....xxx..xx.x*...x",
             "x.x.x..........x.x.x",
-            "x.x.xxx.xxxx.xxx.x.x",
-            "x.x...x......x...x.x",
+            "x.x.x.x.xx.x.x.x.x.x",
+            "x.....x......x...x.x",
             "x.xxx.xxx..xxx.xxx.x",
             "x..................x",
             "xxxxxxxxxxxxxxxxxxxx" ]
@@ -193,6 +189,8 @@ class Maze():
 
     def hasCoinAt(self,r,c):
         return Maze.MAP[r] [c] == "."
+    def hasEndAt(self,r,c):
+        return Maze.MAP[r] [c] == "*"
 
 class Wall:
     def __init__(self, world, x, y):
@@ -207,26 +205,36 @@ class Coin:
         self.y = y
         self.is_collected = False
 
-
     def hit(self, player):
         return (self.x == player.x) and (self.y == player.y)
 
+class End:
+    def __init__(self, world, x, y):
+        self.world = world
+        self.x = x
+        self.y = y
+
+    def youWin(self, player):
+        return (self.x == player.x) and (self.y == player.y)
+
 class World:
-    NUM_ENEMY = 7
+    NUM_ENEMY = 2
+    GAMEOVER = 0
+    WIN = 0
+    WINSCORE = 0
     def __init__(self, width, height):
         self.width = width
         self.height = height
         self.maze = Maze(self)
         self.speed = 8
         self.player = Player(self,80, 80)
-
         self.enemies = []
         for i in range(World.NUM_ENEMY):
             enemy = Enemy(self, 120, 80)
             self.enemies.append(enemy)
-
         self.wall = []
         self.coins = []
+        self.ends = []
         self.score = 0
         for r in range(self.maze.height):
             c = 0
@@ -237,10 +245,12 @@ class World:
                         wall = Wall(self,x,y)
                         self.wall.append(wall)
                     if self.maze.hasCoinAt(r,c):
-                            coin = Coin(self,x,y)
-                            self.coins.append(coin)
+                        coin = Coin(self,x,y)
+                        self.coins.append(coin)
+                    if self.maze.hasEndAt(r,c):
+                        end = End(self,x,y)
+                        self.ends.append(end)
                     c += 1
-
 
     def animate(self, delta):
         self.player.animate(delta)
@@ -250,7 +260,10 @@ class World:
 
         self.collect_coins()
         self.updatespeed()
-        # self.add_enemy()
+        self.add_enemy(self)
+        self.GameOver()
+        self.spamEnemy()
+        self.win()
 
     def collect_coins(self):
         for c in self.coins:
@@ -258,32 +271,53 @@ class World:
                 c.is_collected = True
                 self.score += 10
 
-    # def add_enemy(self):
-    #     if(self.score % 100 ==0):
-    #         World.NUM_NEWENEMY = 2 + self.score//100
-    #     if(World.NUM_NEWENEMY > World.NUM_ENEMY):
-    #         for i in range(World.NUM_ENEMY - World.NUM_ENEMY):
-    #             enemy = Enemy(self, 120, 80)
-    #             self.enemies.append(enemy)
+    def win(self):
+        if(World.WIN == 1):
+             self.score = World.WINSCORE
+        for end in self.ends:
+            if (end.youWin(self.player)) and (World.WIN == 0) and (World.GAMEOVER == 0):
+                World.WIN = 1
+                World.WINSCORE = self.score
+                print('Win')
+
+    def GameOver(self):
+        for enemy in self.enemies:
+            if enemy.gameOver(self.player) and (World.WIN == 0) :
+                World.GAMEOVER = 1
+                self.score = 0
+
+    def spamEnemy(self):
+        if(World.GAMEOVER == 1) and World.WIN == 0 and len(self.enemies) < 300:
+            topleftenemy = Enemy(self, 120, 480)
+            toprightenemy = Enemy(self, 720, 480)
+            botleftenemy = Enemy(self, 120, 80)
+            botrightenemy = Enemy(self, 720, 80)
+            centerenemy = Enemy(self, 420, 280)
+            self.enemies.append(toprightenemy)
+            self.enemies.append(topleftenemy)
+            self.enemies.append(botleftenemy)
+            self.enemies.append(botrightenemy)
+            self.enemies.append(centerenemy)
+
+    def add_enemy(self,world):
+        if (self.score % 100 == 0) and (not self.score == 0):
+            self.score += 10
+            enemy = Enemy(self, 120, 80)
+            self.enemies.append(enemy)
 
     def updatespeed(self):
-
         if self.score == 100:
             self.speed = 8
-
         if self.score == 300:
             self.speed = 4
-
         if self.score == 600:
             self.speed = 2
-
         if self.score == 1000:
             self.speed = 1
 
     def on_key_press(self, key, key_modifiers):
         if key == arcade.key.A:
             self.player.setNextDirectionLeft()
-            print(self.enemies)
         if key == arcade.key.W:
             self.player.setNextDirectionUp()
         if key == arcade.key.D:
